@@ -1,26 +1,28 @@
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.util.Random;
-
 
 public class GamePanel extends JPanel implements ActionListener {
 
-    static final int SCREEN_WIDTH = 420;
-    static final int SCREEN_HEIGHT = 420;
-    static final int UNIT_SIZE = 15;
-    static final int GAME_UNITS = (SCREEN_WIDTH * SCREEN_HEIGHT) / UNIT_SIZE;
-    static final int DELAY = 100;
-    final int x[] = new int[GAME_UNITS];
-    final int y[] = new int[GAME_UNITS];
-    int snakeLength = 6;
-    int foodConsumed;
-    int foodX;
-    int foodY;
-    Direction direction = Direction.RIGHT;
-    boolean running = false;
-    Timer timer;
-    Random random;
+    private static final int SCREEN_WIDTH = 420;
+    private static final int SCREEN_HEIGHT = 420;
+    private static final int UNIT_SIZE = 15;
+    private static final int GAME_UNITS = (SCREEN_WIDTH * SCREEN_HEIGHT) / UNIT_SIZE;
+    private static int DELAY = 120;
+    private final int[] x = new int[GAME_UNITS];
+    private final int[] y = new int[GAME_UNITS];
+    private int foodConsumed = 0;
+    private int snakeLength = 6;
+    private int foodX;
+    private int foodY;
+    private Direction direction = Direction.RIGHT;
+    private boolean running = false;
+    private Timer timer;
+    private final Random random;
 
     public GamePanel() {
         random = new Random();
@@ -31,7 +33,7 @@ public class GamePanel extends JPanel implements ActionListener {
         startGame();
     }
 
-    public void startGame() {
+    private void startGame() {
         generateFood();
         running = true;
         timer = new Timer(DELAY, this);
@@ -43,13 +45,13 @@ public class GamePanel extends JPanel implements ActionListener {
         draw(g);
     }
 
-    public void draw(Graphics g) {
-        if(running) {
+    private void draw(Graphics g) {
+        if (running) {
             // GRID - (DEV)
-            for (int i = 0; i < SCREEN_HEIGHT / UNIT_SIZE; i++) {
-                g.drawLine(i * UNIT_SIZE, 0, i * UNIT_SIZE, SCREEN_HEIGHT);
-                g.drawLine(0, i * UNIT_SIZE, SCREEN_WIDTH, i * UNIT_SIZE);
-            }
+//            for (int i = 0; i < SCREEN_HEIGHT / UNIT_SIZE; i++) {
+//                g.drawLine(i * UNIT_SIZE, 0, i * UNIT_SIZE, SCREEN_HEIGHT);
+//                g.drawLine(0, i * UNIT_SIZE, SCREEN_WIDTH, i * UNIT_SIZE);
+//            }
             // FOOD
             g.setColor(Color.MAGENTA);
             g.fillOval(foodX, foodY, UNIT_SIZE, UNIT_SIZE);
@@ -74,17 +76,23 @@ public class GamePanel extends JPanel implements ActionListener {
                     g.fillRect(x[i], y[i], UNIT_SIZE, UNIT_SIZE);
                 }
             }
-        }else{
+            // SCORE
+            g.setColor(Color.YELLOW);
+            g.setFont(new Font("MV Boli", Font.PLAIN, 20));
+            FontMetrics metrics = getFontMetrics(g.getFont());
+            String score = "Score: " + foodConsumed;
+            g.drawString(score, SCREEN_WIDTH - metrics.stringWidth(score) - UNIT_SIZE, g.getFont().getSize());
+        } else {
             gameOver(g);
         }
     }
 
-    public void generateFood() {
+    private void generateFood() {
         foodX = random.nextInt(SCREEN_WIDTH / UNIT_SIZE) * UNIT_SIZE;
         foodY = random.nextInt(SCREEN_HEIGHT / UNIT_SIZE) * UNIT_SIZE;
     }
 
-    public void move() {
+    private void move() {
         for (int i = snakeLength; i > 0; i--) {
             x[i] = x[i - 1];
             y[i] = y[i - 1];
@@ -97,11 +105,18 @@ public class GamePanel extends JPanel implements ActionListener {
         }
     }
 
-    public void checkFood() {
-
+    private void checkFood() {
+        if (x[0] == foodX && y[0] == foodY) {
+            foodConsumed++;
+            snakeLength++;
+            generateFood();
+            if (DELAY > 50 && foodConsumed % 5 == 0) {
+                timer.setDelay(DELAY = DELAY - 5);
+            }
+        }
     }
 
-    public void checkCollision() {
+    private void checkCollision() {
         // HEAD COLLIDING WITH BODY
         for (int i = snakeLength; i > 0; i--) {
             if (x[0] == x[i] && y[0] == y[i]) {
@@ -110,7 +125,7 @@ public class GamePanel extends JPanel implements ActionListener {
             }
         }
         // HEAD COLLIDING WITH BORDERS
-        if (x[0] < 0 || x[0] > SCREEN_WIDTH-UNIT_SIZE || y[0] < 0 || y[0] > SCREEN_HEIGHT-UNIT_SIZE) {
+        if (x[0] < 0 || x[0] > SCREEN_WIDTH - UNIT_SIZE || y[0] < 0 || y[0] > SCREEN_HEIGHT - UNIT_SIZE) {
             running = false;
         }
         if (!running) {
@@ -118,8 +133,19 @@ public class GamePanel extends JPanel implements ActionListener {
         }
     }
 
-    public void gameOver(Graphics g) {
-
+    private void gameOver(Graphics g) {
+        // SCORE
+        g.setColor(Color.YELLOW);
+        g.setFont(new Font("MV Boli", Font.PLAIN, 20));
+        FontMetrics metrics1 = getFontMetrics(g.getFont());
+        String score = "Score: " + foodConsumed;
+        g.drawString(score, (SCREEN_WIDTH - metrics1.stringWidth(score)) / 2, (SCREEN_HEIGHT / 2) + g.getFont().getSize());
+        // GAME OVER
+        g.setColor(Color.RED);
+        g.setFont(new Font("MV Boli", Font.PLAIN, 60));
+        FontMetrics metrics2 = getFontMetrics(g.getFont());
+        String gameOver = "GAME OVER!";
+        g.drawString(gameOver, (SCREEN_WIDTH - metrics2.stringWidth(gameOver)) / 2, SCREEN_HEIGHT / 2);
     }
 
     @Override
@@ -132,7 +158,7 @@ public class GamePanel extends JPanel implements ActionListener {
         repaint();
     }
 
-    public class MyKeyAdapter extends KeyAdapter {
+    private class MyKeyAdapter extends KeyAdapter {
         @Override
         public void keyPressed(KeyEvent e) {
             switch (e.getKeyCode()) {
